@@ -11,11 +11,10 @@ import java.util.HashSet
 // As action for broadcast receiver android.net.conn.CONNECTIVITY_CHANGE is deprecated, had to use this solution
 class NetworkStateReceiver : BroadcastReceiver() {
 
-    protected var listeners: MutableSet<NetworkStateReceiverListener>
-    protected var connected: Boolean? = null
+    private var listeners: MutableSet<NetworkStateReceiverListener> = HashSet()
+    private var connected: Boolean? = null
 
     init {
-        listeners = HashSet()
         connected = null
     }
 

@@ -8,7 +8,7 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.test.teamvoy.sunrise"
-        minSdkVersion 19
+        minSdkVersion 23
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -40,8 +40,6 @@ dependencies {
     // Retrofit stuff
     implementation 'com.squareup.retrofit2:retrofit:2.5.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
-    //Location
-    implementation 'com.google.android.gms:play-services-location:16.0.0'
     //Places SDK
     implementation 'com.google.android.libraries.places:places:1.1.0'
 

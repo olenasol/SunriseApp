@@ -2,79 +2,136 @@ package com.test.teamvoy.sunrise.screens.sunrise
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.location.LocationServices
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
+import com.google.android.libraries.places.api.net.PlacesClient
 import com.test.teamvoy.sunrise.R
 import com.test.teamvoy.sunrise.base.BaseViewModel
-import com.test.teamvoy.sunrise.networking.base.ScreenState
 import com.test.teamvoy.sunrise.base.SunriseApp
-import com.test.teamvoy.sunrise.networking.base.Resource
-import com.test.teamvoy.sunrise.networking.base.State
 import com.test.teamvoy.sunrise.networking.api.SunriseResponse
+import com.test.teamvoy.sunrise.networking.base.Resource
+import com.test.teamvoy.sunrise.networking.base.ScreenState
+import com.test.teamvoy.sunrise.networking.base.State
+import java.util.*
 
+class SunriseViewModel(application: Application) : BaseViewModel(application) {
 
-class SunriseViewModel(application: Application):BaseViewModel(application){
+    private lateinit var placesClient: PlacesClient
 
-    lateinit var googleApiClient:GoogleApiClient
+    private val currentLocationStateLiveData = MutableLiveData<ScreenState>()
+    private val currentLocationLiveData = MutableLiveData<SunriseResponse?>()
 
-    private val screenState = MutableLiveData<ScreenState>()
+    private val citySunriseStateLiveData = MutableLiveData<ScreenState>()
+    private val citySunriseLiveData = MutableLiveData<SunriseResponse?>()
 
+    fun getCurrentLocationState() = currentLocationStateLiveData as LiveData<ScreenState>
+    fun getCurrentLocation() = currentLocationLiveData as LiveData<SunriseResponse?>
 
+    fun getCitySunriseState() = citySunriseStateLiveData as LiveData<ScreenState>
+    fun getCitySunrise() = citySunriseLiveData as LiveData<SunriseResponse?>
 
-    fun getScreenState() = screenState as LiveData<ScreenState>
+    private var sunriseResponse : LiveData<Resource<SunriseResponse>> = MutableLiveData()
+
     init {
         initApiClient()
     }
-    private fun initApiClient(){
-        googleApiClient = GoogleApiClient.Builder(getApplication<SunriseApp>().applicationContext)
-            .addApi(LocationServices.API)
-            .addOnConnectionFailedListener {
-                error.postValue(getApplication<SunriseApp>().applicationContext.getString(R.string.failed_get_location))
+    //region Observers
+    private val currentTimeSunriseObserver:Observer<Resource<SunriseResponse>> = object : Observer<Resource<SunriseResponse>> {
+        override fun onChanged(resource: Resource<SunriseResponse>?) {
+            if (resource != null) {
+                when (resource.state) {
+                    State.LOADING -> {
+                        currentLocationStateLiveData.postValue(ScreenState.LOADING)
+                    }
+                    State.FAILURE -> {
+                        currentLocationStateLiveData.postValue(ScreenState.ERROR)
+                        error.postValue(resource.message)
+                        currentLocationLiveData.postValue(null)
+                        sunriseResponse.removeObserver(this)
+                    }
+                    State.SUCCESS -> {
+                        currentLocationStateLiveData.postValue(ScreenState.SUCCESS)
+                        currentLocationLiveData.postValue(resource.data)
+                        sunriseResponse.removeObserver(this)
+                    }
+                }
             }
-            .build()
+        }
+    }
+    private val cityTimeSunriseObserver:Observer<Resource<SunriseResponse>> = object : Observer<Resource<SunriseResponse>> {
+        override fun onChanged(resource: Resource<SunriseResponse>?) {
+            if (resource != null) {
+                when (resource.state) {
+                    State.LOADING -> {
+                        citySunriseStateLiveData.postValue(ScreenState.LOADING)
+                        citySunriseLiveData.postValue(null)
+                    }
+                    State.FAILURE -> {
+                        citySunriseStateLiveData.postValue(ScreenState.ERROR)
+                        error.postValue(resource.message)
+                        citySunriseLiveData.postValue(null)
+                        sunriseResponse.removeObserver(this)
+                    }
+                    State.SUCCESS -> {
+                        citySunriseStateLiveData.postValue(ScreenState.SUCCESS)
+                        citySunriseLiveData.postValue(resource.data)
+                        sunriseResponse.removeObserver(this)
+                    }
+                }
+            }
+        }
+    }
+    //endregion
+
+    private fun initApiClient() {
+        placesClient = Places.createClient(getApplication<SunriseApp>().applicationContext)
     }
 
     @SuppressLint("MissingPermission")
-    fun getCurrentSunriseTime(){
-        val fusedLocationApi = LocationServices.getFusedLocationProviderClient(getApplication<SunriseApp>().applicationContext)
-        fusedLocationApi.lastLocation.addOnSuccessListener {
-            location ->
-                location?.let {
-                    val sunriseResponse = repository.getSunriseTime(it.latitude,it.longitude)
-                    sunriseResponse.observeForever(object : Observer<Resource<SunriseResponse>> {
-                        override fun onChanged(resource: Resource<SunriseResponse>?) {
-                            if (resource != null) {
-                                when (resource.state) {
-                                    State.LOADING->screenState.postValue(ScreenState.LOADING)
-                                    State.FAILURE->{
-                                        screenState.postValue(ScreenState.ERROR)
-                                        error.postValue(resource.message)
-                                        sunriseResponse.removeObserver(this)
-                                    }
-                                    State.SUCCESS->{
-                                        screenState.postValue(ScreenState.SUCCESS)
-                                        Log.d("TEST",resource.data.toString())
-                                        sunriseResponse.removeObserver(this)
-                                    }
-                                }
-                            }
-                        }
-
-                    })
-                }
-
+    fun getCurrentSunriseTime() {
+        currentLocationLiveData.postValue(null)
+        val placeFields = Arrays.asList(Place.Field.NAME, Place.Field.LAT_LNG)
+        val request = FindCurrentPlaceRequest.builder(placeFields).build()
+        currentLocationStateLiveData.postValue(ScreenState.LOADING)
+        val placeResponse = placesClient.findCurrentPlace(request)
+        placeResponse.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val response = task.result
+                getSunriseForLocation(
+                    response?.placeLikelihoods?.get(0)?.place?.latLng?.latitude,
+                    response?.placeLikelihoods?.get(0)?.place?.latLng?.longitude,
+                    null
+                )
+            } else {
+                currentLocationLiveData.postValue(null)
+                currentLocationStateLiveData.postValue(ScreenState.ERROR)
+                error.postValue(getApplication<SunriseApp>().applicationContext.getString(R.string.failed_get_location))
+            }
         }
     }
 
-    fun onPause() {
-        googleApiClient.disconnect()
+    private fun getSunriseForLocation(latitude: Double?, longitude: Double?,name:String?) {
+        if (latitude != null && longitude != null) {
+            sunriseResponse = repository.getSunriseTime(latitude, longitude)
+            if (name == null)
+                sunriseResponse.observeForever(currentTimeSunriseObserver)
+            else
+                sunriseResponse.observeForever(cityTimeSunriseObserver)
+        } else {
+            error.postValue(getApplication<SunriseApp>().applicationContext.getString(R.string.failed_get_location))
+            if (name == null)
+                currentLocationLiveData.postValue(null)
+            else
+                citySunriseLiveData.postValue(null)
+        }
     }
 
-    fun onResume() {
-        googleApiClient.connect()
+    fun onPlaceSelected(place: Place) {
+        getSunriseForLocation(place.latLng?.latitude,place.latLng?.longitude,place.name)
     }
+
 }

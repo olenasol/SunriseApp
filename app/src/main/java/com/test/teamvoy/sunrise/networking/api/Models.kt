@@ -13,11 +13,3 @@ data class ResultData(
 data class APIError(
     val status:String?
 )
-
-data class CitiesResponse(
-    @field:SerializedName("predictions") val listOfCities:List<City>,
-    val status:String?
-)
-data class City(
-    @field:SerializedName("description") val name:String
-)

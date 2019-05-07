@@ -72,7 +72,9 @@ constructor() {
     }
 
     @WorkerThread
-    protected abstract fun saveCallResult(item: ResultType)
+    protected fun saveCallResult(item: ResultType){
+
+    }
 
     @MainThread
     protected abstract fun createCall(): LiveData<ApiResponse<ResultType>>

@@ -7,10 +7,10 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 class ApiClient private constructor() {
-    private val BASE_URL = "https://api.sunrise-sunset.org/"
+    private val BASEURL = "https://api.sunrise-sunset.org/"
 
-    public var webService: WebService
-    public var retrofit: Retrofit
+    var webService: WebService
+    var retrofit: Retrofit
 
     companion object {
         const val TIMEOUT = 20L
@@ -23,7 +23,7 @@ class ApiClient private constructor() {
     init {
         val client = defaultClient()
         retrofit = Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BASEURL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .addCallAdapterFactory(LiveDataCallAdapterFactory())

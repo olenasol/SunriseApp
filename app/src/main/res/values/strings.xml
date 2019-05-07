@@ -1,6 +1,10 @@
 <resources>
-    <string name="app_name">TeamvoySunriseApp</string>
+    <string name="app_name">SunriseApp</string>
 
     <string name="no_internet">No internet connection</string>
     <string name="failed_get_location">Failed to fetch location</string>
+    <string name="location_needed">Location permission needed to get your current sunset time</string>
+    <string name="go_to_settings">Go to settings</string>
+    <string name="no_information_about_current_location">No information about current location</string>
+    <string name="fetching">Fetching...</string>
 </resources>

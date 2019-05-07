@@ -81,7 +81,7 @@ abstract class BaseFragment<VM : BaseViewModel> : Fragment() {
         }
     }
 
-    private fun showErrorAlerter(s: String) {
+    protected fun showErrorAlerter(s: String) {
         Toast.makeText(context, s, Toast.LENGTH_LONG).show()
     }
     protected fun onNetworkConnectionLost() {

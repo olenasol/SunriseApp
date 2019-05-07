@@ -62,7 +62,7 @@ class ApiResponse<D> {
         return error
     }
 
-    fun parseError(response: Response<*>): APIError? {
+    private fun parseError(response: Response<*>): APIError? {
         val converter = ApiClient.getClient().retrofit
             .responseBodyConverter<APIError>(APIError::class.java, arrayOfNulls(0))
 

@@ -24,8 +24,8 @@ class AppExecutors private constructor(diskIO: Executor, networkIO: Executor, ma
     constructor() : this(
         Executors.newSingleThreadExecutor(), Executors.newFixedThreadPool(3),
         MainThreadExecutor()
-    ) {
-    }
+    )
+
 
     private class MainThreadExecutor : Executor {
         private val mainThreadHandler = Handler(Looper.getMainLooper())
