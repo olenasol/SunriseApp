@@ -9,8 +9,8 @@ import com.test.teamvoy.sunrise.networking.base.AppExecutors
 class SunriseApp : Application() {
 
     companion object {
-
-        const val API_KEY = "AIzaSyClqTH0S_uxcDupORgNWzW7MmSeLewF19Y"
+        //should not be here 
+        const val API_KEY = "API_KEY"
 
         private var networkAvailable: Boolean = false
 
